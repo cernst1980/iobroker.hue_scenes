@@ -2,7 +2,10 @@
 ioBroker Javascript for activating Hue scenes
 
 ## Installation
-Set host and username in the script (both values can be copied from ioBroker Hue Adapter)
+In the ioBroker Javascript Adapter, the module "node-hue-api" has to be loaded.
+In the script, host and username needs to be set (both values can be copied from ioBroker Hue Adapter)
 
-## Screenshot
-![Screenshot](screenshot.png)
+## Screenshots
+![node-hue-api](node-hue-api.png)
+
+![objects](screenshot.png)
