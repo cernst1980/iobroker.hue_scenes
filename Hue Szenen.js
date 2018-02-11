@@ -71,6 +71,7 @@ on({id: /^javascript\.0\.Hue_Scenes\./, val: true}, function (obj) {
         if (err) throw err;
         displayResults(result);
     });
+    setState(obj.id, false);
 });
 
 on({id: 'javascript.0.Hue_Scenes.Resync', val: true}, function (obj) {
