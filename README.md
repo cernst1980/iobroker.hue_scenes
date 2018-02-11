@@ -10,3 +10,5 @@ In the script, host and username needs to be set (both values can be copied from
 ![node-hue-api](node-hue-api.png)
 
 ![objects](screenshot.png)
+
+![vis](vis.png)
