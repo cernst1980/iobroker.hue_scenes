@@ -4,49 +4,43 @@ var host = "192.168.x.x",
     username = "xxxxxxxxxx",
     api = new HueApi(host, username);
     
-var light_list = [];
+var groups = [],
+    objects = [];
 
 var displayResults = function(result) {
     console.log(JSON.stringify(result, null, 2));
 };
 
-var parseGroup0 = function(result) {
-    var id = result.id,
-    lights = result.lights,
-    name = 'All lights',
-    type = result.type;
-    console.debug('Group: '+name);
-    light_list[lights] = name;
-};
-
 var parseGroups = function(result) {
     for (var i = 0; i < result.length; i++) {
-        if (!result[i].lights){continue;}
-        
         var id = result[i].id,
-        lights = result[i].lights,
-        name = result[i].name,
-        type = result[i].type;
-        console.debug('Group: '+name);
-        light_list[lights] = name;
-    } 
+        name = result[i].name;
+        console.debug('group: '+name+' id: '+id);
+        groups[id] = name;
+    }
+    groups[0] = 'All lights';
 };
 
 var createStates = function(result) {
     createState('Hue_Scenes.Resync', false, {role: "button", name: 'Resync Groups and Scenes'});
+
     for (var i = 0; i < result.length; i++) { 
-        if (!result[i].appdata.data){continue;}
-        
-        var id = result[i].id,
+        var regex = /\w{5}_r(\d{2})_d(\d{2})/;
+        if (!regex.test(result[i].appdata.data)){continue;}
+
+        var room = regex.exec(result[i].appdata.data)[1],
+        number = regex.exec(result[i].appdata.data)[2],
+        id = result[i].id,
         lights = result[i].lights,
         name = result[i].name.replace(/"/g,''),
         pathname = name.replace(/ /g,'_'),
-        group = light_list[lights] || lights;
-
-        if (name.indexOf("-Switch") !== -1){continue;}
-
-        console.debug('Scene: '+name);
-        createState('Hue_Scenes.'+pathname+'.'+id, false, {role: "button", name: 'Scene: '+name+' ('+group+')'});
+        group = groups[parseInt(room)] || lights;
+        
+        if (!objects[room+number] || number == 99){
+            console.debug('scene: '+name);
+            createState('Hue_Scenes.'+pathname+'.'+id, false, {role: "button", name: 'Scene: '+name+' ('+group+')'});
+            objects[room+number] = true;
+        }
     }
 };
 
@@ -56,26 +50,16 @@ function deleteStates(){
     });
 }
 
-api.getGroup(0, function(err, group0) {
-    if (err) throw err;
-    console.debug('Processing Group 0...');
-    //displayResults(group0);
-    parseGroup0(group0);
-});
-
 api.groups(function(err, groups) {
     if (err) throw err;
-    console.debug('Processing Groups...');
+    console.debug('Processing groups...');
     //displayResults(groups);
     parseGroups(groups);
 });
 
-console.debug('Deleting current scenes...');
-deleteStates();
-
 api.scenes(function(err, scenes) {
     if (err) throw err;
-    console.debug('Processing Scenes...');
+    console.debug('Processing scenes...');
     //displayResults(scenes);
     createStates(scenes);
 });
@@ -92,24 +76,20 @@ on({id: /^javascript\.0\.Hue_Scenes\./, val: true}, function (obj) {
 on({id: 'javascript.0.Hue_Scenes.Resync', val: true}, function (obj) {
     console.debug('Resync triggered...');
     
-    api.getGroup(0, function(err, group0) {
-        if (err) throw err;
-        console.debug('Processing Group 0...');
-        parseGroup0(group0);
-    });
-
+    groups = [];
     api.groups(function(err, groups) {
         if (err) throw err;
-        console.debug('Processing Groups...');
+        console.debug('Processing groups...');
         parseGroups(groups);
     });
     
     console.debug('Deleting current scenes...');
+    objects = [];
     deleteStates();
     
     api.scenes(function(err, scenes) {
         if (err) throw err;
-        console.debug('Processing Scenes...');
+        console.debug('Processing scenes...');
         createStates(scenes);
     });
 });
