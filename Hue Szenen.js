@@ -1,4 +1,4 @@
-var HueApi = require("node-hue-api").HueApi
+var HueApi = require("node-hue-api").HueApi;
 
 var host = "192.168.x.x",
     username = "xxxxxxxxxx",
@@ -25,21 +25,22 @@ var createStates = function(result) {
     createState('Hue_Scenes.Resync', false, {role: "button", name: 'Resync Groups and Scenes'});
 
     for (var i = 0; i < result.length; i++) { 
-        var regex = /\w{5}_r(\d{2})_d(\d{2})/;
+        var regex = /(\w{5})(?:_r|\s+:DA)(\d{2})(?:_d)?(\d{2,3})/;
         if (!regex.test(result[i].appdata.data)){continue;}
 
-        var room = regex.exec(result[i].appdata.data)[1],
-        number = regex.exec(result[i].appdata.data)[2],
+        var dataid = regex.exec(result[i].appdata.data)[1],
+        room = regex.exec(result[i].appdata.data)[2],
+        number = regex.exec(result[i].appdata.data)[3],
         id = result[i].id,
         lights = result[i].lights,
         name = result[i].name.replace(/"/g,''),
         pathname = name.replace(/ /g,'_'),
         group = groups[parseInt(room)] || lights;
         
-        if (!objects[room+number] || number == 99){
+        if (!objects[room+'§'+pathname]){
             console.debug('scene: '+name);
             createState('Hue_Scenes.'+pathname+'.'+id, false, {role: "button", name: 'Scene: '+name+' ('+group+')'});
-            objects[room+number] = true;
+            objects[room+'§'+pathname] = true;
         }
     }
 };
