@@ -25,7 +25,7 @@ var createStates = function(result) {
     createState('Hue_Scenes.Resync', false, {role: "button", name: 'Resync Groups and Scenes'});
 
     for (var i = 0; i < result.length; i++) { 
-        var regex = /(\w{5})(?:_r|\s+:DA)(\d{2})(?:_d)?(\d{2,3})/;
+        var regex = /(\w{5})(?:_r|\s+:\w{2})(\d{2})(?:_d)?(\d{2,3})/;
         if (!regex.test(result[i].appdata.data)){continue;}
 
         var dataid = regex.exec(result[i].appdata.data)[1],
