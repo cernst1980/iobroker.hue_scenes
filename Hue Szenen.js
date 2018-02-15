@@ -16,24 +16,24 @@ var displayResults = function(result) {
 
 // Parse Light Group 0 (All Lights)
 var parseGroup0 = function(result) {
-    if (!result[i].lights){continue;} // Empty group
+    if (!result.lights){return} // Empty group
     
     var id = result.id,
-    lights = result.lights,
-    name = "All Lights";
-    console.debug('group: '+name+' id: '+id);
+        lights = result.lights,
+        name = "All Lights";
+    console.debug('group: '+name+', lights: '+lights);
     groups_[lights] = name;
 };
 
 // Parse Light Groups
 var parseGroups = function(result) {
     for (var i = 0; i < result.length; i++) {
-        if (!result[i].lights){continue;} // Empty group
+        if (!result[i].lights){continue} // Empty group
         
         var id = result[i].id,
-        lights = result[i].lights,
-        name = result[i].name;
-        console.debug('group: '+name+' id: '+id);
+            lights = result[i].lights,
+            name = result[i].name;
+        console.debug('group: '+name+', lights: '+lights);
         groups_[lights] = name;
     }
 };
@@ -42,7 +42,8 @@ var parseGroups = function(result) {
 var parseLights = function(result) {
     for (var i = 0; i < result.length; i++) {
         var id = result[i].id,
-        name = result[i].name;
+            name = result[i].name;
+        console.debug('light: '+name+', id: '+id);
         lights_[id] = name;
     } 
 };
@@ -50,15 +51,15 @@ var parseLights = function(result) {
 // Create States in ioBroker
 var createStates = function(result) {
     // Resync button
-    createState('Hue_Scenes.Resync', false, {role: "button", name: 'Resync Groups and Scenes'});
+    createState('Hue_Scenes.Resync', false, {role: "button", name: 'Resync Groups, Lights and Scenes'});
 
     for (var i = 0; i < result.length; i++) {
-        if (!result[i].appdata.data){continue;} // skip internal szenes
+        if (!result[i].appdata.data){continue} // skip internal szenes
 
         var id = result[i].id,
-        lights = result[i].lights,
-        name = result[i].name.replace(/"/g,''),
-        pathname = name.replace(/ /g,'_');
+            lights = result[i].lights,
+            name = result[i].name.replace(/"/g,''),
+            pathname = name.replace(/ /g,'_');
         
         // Get light names
         var light_names = [];
@@ -68,11 +69,11 @@ var createStates = function(result) {
         }
 
         // Room, group or lights linked with scene
-        var group = groups_[lights] || light_names.join(", ");
+        var group = 'Group: '+groups_[lights] || 'Lights: '+light_names.join(", ");
         
         // Create States and skip duplicates
         if (!objects_[lights+pathname]){
-            console.debug('scene: '+name);
+            console.debug('scene: '+name+', '+group);
             createState('Hue_Scenes.'+pathname+'.'+id, false, {role: "button", name: 'Scene: '+name+' ('+group+')'});
             objects_[lights+pathname] = true;
         }
@@ -81,7 +82,7 @@ var createStates = function(result) {
 
 // Delete States
 function deleteStates(){
-    console.debug('Deleting current scene objects...');
+    console.log('Deleting current objects for scenes...');
     objects_ = [];
     $('javascript.0.Hue_Scenes.*').each(function (id) {
         deleteState(id);
@@ -105,6 +106,7 @@ function init(){
 
     api.lights(function(err, lights) {
         if (err) throw err;
+        console.debug('Processing lights...');
         //displayResults(lights);
         parseLights(lights.lights);
     });
@@ -122,8 +124,9 @@ init();
 
 // Activate scene
 on({id: /^javascript\.0\.Hue_Scenes\./, val: true}, function (obj) {
+    if (obj.id == 'javascript.0.Hue_Scenes.Resync'){return}
     sceneId = obj.id.split('.').pop();
-    console.debug('Activating '+obj.name);
+    console.log('Activating '+obj.name);
     api.activateScene(sceneId, function(err, result) {
         if (err) throw err;
         displayResults(result);
@@ -133,7 +136,7 @@ on({id: /^javascript\.0\.Hue_Scenes\./, val: true}, function (obj) {
 
 // Resync
 on({id: 'javascript.0.Hue_Scenes.Resync', val: true}, function (obj) {
-    console.debug('Resync triggered...');
+    console.log('Resync triggered...');
     groups_ = [];
     lights_ = [];
     deleteStates();
