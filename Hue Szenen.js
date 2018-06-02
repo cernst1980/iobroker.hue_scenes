@@ -11,7 +11,7 @@ var groups_ = [],
 
 // Log JSON results
 var displayResults = function(result) {
-    console.log(JSON.stringify(result, null, 2));
+    console.log('Reponse: '+JSON.stringify(result, null, 2));
 };
 
 // Parse Light Group 0 (All Lights)
@@ -51,7 +51,7 @@ var parseLights = function(result) {
 // Create States in ioBroker
 var createStates = function(result) {
     // Resync button
-    createState('Hue_Scenes.Resync', false, {role: "button", name: 'Resync Groups, Lights and Scenes'});
+    createState('PhilipsHue.Scenes.Resync', false, {role: "button", name: 'Resync Philips Hue Groups, Lights and Scenes'});
 
     for (var i = 0; i < result.length; i++) {
         if (!result[i].appdata.data){continue} // skip internal szenes
@@ -74,7 +74,7 @@ var createStates = function(result) {
         // Create States and skip duplicates
         if (!objects_[lights+pathname]){
             console.debug('scene: '+name+', '+group);
-            createState('Hue_Scenes.'+pathname+'.'+id, false, {role: "button", name: 'Scene: '+name+' ('+group+')'});
+            createState('PhilipsHue.Scenes.'+pathname+'.'+id, false, {role: "button", name: 'Scene: '+name+' ('+group+')'});
             objects_[lights+pathname] = true;
         }
     }
@@ -84,7 +84,7 @@ var createStates = function(result) {
 function deleteStates(){
     console.log('Deleting current objects for scenes...');
     objects_ = [];
-    $('javascript.0.Hue_Scenes.*').each(function (id) {
+    $('javascript.0.PhilipsHue.Scenes.*').each(function (id) {
         deleteState(id);
     });
 }
@@ -93,27 +93,27 @@ function deleteStates(){
 function init(){
     api.getGroup(0, function(err, group0) {
         if (err) throw err;
-        console.debug('Processing group 0...');
+        console.log('Processing group 0...');
         //displayResults(group0);
         parseGroup0(group0);
     });
     api.groups(function(err, groups) {
         if (err) throw err;
-        console.debug('Processing groups...');
+        console.log('Processing ' + groups.length + ' groups...');
         //displayResults(groups);
         parseGroups(groups);
     });
 
     api.lights(function(err, lights) {
         if (err) throw err;
-        console.debug('Processing lights...');
+        console.log('Processing ' + lights.lights.length + ' lights...');
         //displayResults(lights);
         parseLights(lights.lights);
     });
 
     api.scenes(function(err, scenes) {
         if (err) throw err;
-        console.debug('Processing scenes...');
+        console.log('Processing ' + scenes.length + ' scenes...');
         //displayResults(scenes);
         createStates(scenes);
     });
@@ -123,8 +123,8 @@ function init(){
 init();
 
 // Activate scene
-on({id: /^javascript\.0\.Hue_Scenes\./, val: true}, function (obj) {
-    if (obj.id == 'javascript.0.Hue_Scenes.Resync'){return}
+on({id: /^javascript\.0\.PhilipsHue.Scenes\./, val: true}, function (obj) {
+    if (obj.id == 'javascript.0.PhilipsHue.Scenes.Resync'){return}
     sceneId = obj.id.split('.').pop();
     console.log('Activating '+obj.name);
     api.activateScene(sceneId, function(err, result) {
@@ -135,7 +135,15 @@ on({id: /^javascript\.0\.Hue_Scenes\./, val: true}, function (obj) {
 });
 
 // Resync
-on({id: 'javascript.0.Hue_Scenes.Resync', val: true}, function (obj) {
+on({id: 'javascript.0.PhilipsHue.Scenes.Resync', val: true}, function (obj) {
+    console.log('Resync triggered...');
+    groups_ = [];
+    lights_ = [];
+    deleteStates();
+    init();
+});
+
+schedule("0 3 * * *", function () {
     console.log('Resync triggered...');
     groups_ = [];
     lights_ = [];
